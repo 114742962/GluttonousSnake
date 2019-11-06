@@ -41,10 +41,12 @@ public class SnakeClient extends Frame{
     Direction dir = Direction.LEFT;
     int xOld;
     int yOld;
-    
+    /**
+     * @Fields field:field:{todo}(用一句话描述这个变量表示什么)
+     */
+    private static final long serialVersionUID = 1L;
     private static final int GAME_WIDTH = 400;
     private static final int GAME_HEIGHT = 460;
-    
     List<Food> snake = new ArrayList<>();
     
     public static void main(String[] args) {
@@ -54,17 +56,13 @@ public class SnakeClient extends Frame{
     
     private void launchFrame() {
         setTitle("GluttonousSnake");
-        setBounds(400, 300, GAME_WIDTH, GAME_HEIGHT);
+        setBounds(400, 100, GAME_WIDTH, GAME_HEIGHT);
         setBackground(Color.LIGHT_GRAY);
         setResizable(false);
         setVisible(true);
         
         for (int i=0; i<snakeStartLenth; i++) {
-            if (i == 0) {
-                snake.add(new Food(x + 4 * i, y, Direction.LEFT, this));
-            } else {
-                snake.add(new Food(x + 4 * i, y, this));
-            }
+            snake.add(new Food(x + Food.WIDTH * (3 - i), y, this));
         }
         
         // 启动画面刷新线程池
@@ -108,10 +106,9 @@ public class SnakeClient extends Frame{
     @Override
     public void paint(Graphics g) {
         for (int i=0; i<snake.size(); i++) {
-            Food foodOnSnake = snake.get(snake.size() - i - 1);
+            Food foodOnSnake = snake.get(i);
             foodOnSnake.draw(g);
         }
-        move();
     }
     
     @Override
@@ -139,39 +136,54 @@ public class SnakeClient extends Frame{
         gOfBackScreen.drawString("SnakeLength: " + snake.size(), 30, 45);
         // 使用虚拟屏画笔画出屏幕上的元素
         paint(gOfBackScreen);
+        // 使用真实屏幕画笔将虚拟屏画出
+        g.drawImage(backScreen, 0, 0, null);
         // 还原虚拟屏画笔的初始颜色
         gOfBackScreen.setColor(c);
-        // 使用真实屏幕画笔将虚拟屏画出
-        g.drawImage(backScreen, 0, 0, null);  
+        
+        snakeMove(dir);
     }
     
-    public void move() {
-        for (int i=snake.size() - 1; i>0; i--) {
-            Food foodOnSnake = snake.get(i);
-            xOld = snake.get(i - 1).x;
-            yOld = snake.get(i - 1).y;
-            foodOnSnake.x = xOld;
-            foodOnSnake.y = yOld;
-            snake.get(0).move(dir);
-        } 
+    public void snakeMove(Direction dir) {
+        
+        if (dir == null) {
+            return;
+        }
+        
+        switch (dir) {
+            case UP:
+                y -= Food.HEIGHT;
+                break;
+            case DOWN:
+                y += Food.HEIGHT;
+                break;
+            case LEFT:
+                x -= Food.WIDTH;
+                break;
+            case RIGHT:
+                x += Food.WIDTH;
+                break;
+            default:
+                break;
+        }
+        
+        snake.add(new Food(x, y, this));
+        snake.remove(0);
     }
     
     private class SnakeRun implements Runnable {
-
         @Override
         public void run() {
-            repaint();
             while(true) {
                 // 调用重画方法，重画方法会先调用update方法，再调用paint方法
                 repaint();      
                 try {
                     // 每刷新一次等待30ms
-                    Thread.sleep(350);   
+                    Thread.sleep(100);   
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
         }
-        
     }
 }

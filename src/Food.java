@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Rectangle;
 
 /**
 * @Title: Food.java
@@ -27,7 +28,6 @@ public class Food {
     public static final int HEIGHT = 8;
     int x;
     int y;
-    Direction dir;
     
     private SnakeClient snakeClient = null;
     
@@ -37,41 +37,21 @@ public class Food {
         this.snakeClient = snakeClient;
     }
     
-    Food(int x, int y, Direction dir, SnakeClient snakeClient) {
-        this.x = x;
-        this.y = y;
-        this.dir = dir;
-        this.snakeClient = snakeClient;
-    }
-    
     public void draw(Graphics g) {
         Color c = g.getColor();
         g.setColor(Color.WHITE);
         g.fillRect(x, y, WIDTH, HEIGHT);
+        g.setColor(c);
     }
     
-    public void move(Direction dir) {
-        
-        if (dir == null) {
-            return;
-        }
-        
-        switch (dir) {
-            case UP:
-                y -= HEIGHT;
-                break;
-            case DOWN:
-                y += HEIGHT;
-                break;
-            case LEFT:
-                x -= WIDTH;
-                break;
-            case RIGHT:
-                x += WIDTH;
-                break;
-            default:
-                break;
+    public Rectangle getRectangle() {
+        Rectangle rectangle = new Rectangle(x, y, WIDTH, HEIGHT);
+        return rectangle;
+    }
+    
+    public void collisionDetection() {
+        if (snakeClient != null) {
+            
         }
     }
-
 }
