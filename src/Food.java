@@ -48,10 +48,4 @@ public class Food {
         Rectangle rectangle = new Rectangle(x, y, WIDTH, HEIGHT);
         return rectangle;
     }
-    
-    public void collisionDetection() {
-        if (snakeClient != null) {
-            
-        }
-    }
 }
