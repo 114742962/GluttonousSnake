@@ -41,21 +41,30 @@ public class SnakeClient extends Frame{
     Image backScreen = null;
     /** 记分区的高度，宽度与游戏客户端宽度一致，这里不做申明 */ 
     public static final int SCORE_AREA = 60;
+    /** 初始化贪吃蛇移动的方向 */
     Direction dir = Direction.LEFT;
     /**
      * @Fields field:field:{todo}(用一句话描述这个变量表示什么)
      */
     private static final long serialVersionUID = 1L;
+    /** 游戏客户端的宽度 */
     private static final int GAME_WIDTH = 400;
+    /** 游戏客户端的高度 */
     private static final int GAME_HEIGHT = 460;
+    /** 贪吃蛇身上的蛇肉集合 */
     List<Food> snake = new ArrayList<>();
+    /** 屏幕上的食物，可以吃的  */
     Food foodForEat = null;
+    /** 随机生成的食物的x坐标 */
     Random xRandom = new Random();
+    /** 随机生成的食物的y坐标*/
     Random yRandom = new Random();
+    /** 线程池的实例 */
     ThreadPoolService threadpool = null;
-    SnakeRun run = new SnakeRun();
-    Thread thread = null;
-    Label label = new Label("game over!");
+    /** 贪吃蛇自动移动线程的实例 */
+    SnakeRun run = null;
+    /** 画面自动刷新线程的实例 */
+    Refresh fresh = null;
     
     public static void main(String[] args) {
         SnakeClient snakeClient = new SnakeClient();
@@ -63,26 +72,22 @@ public class SnakeClient extends Frame{
     }
     
     private void launchFrame() {
-        setExtendedState(0);
         setTitle("GluttonousSnake");
         setBounds(400, 100, GAME_WIDTH, GAME_HEIGHT);
         setBackground(Color.LIGHT_GRAY);
         setResizable(false);
-        label.setBounds(200, 200, 10, 10);
-        label.setVisible(false);
         setVisible(true);
         
         for (int i=0; i<snakeStartLenth; i++) {
             snake.add(new Food(x + Food.WIDTH * (3 - i), y, this));
         }
         
-        // 启动画面刷新线程池
-//        threadpool = new ThreadPoolService();
-//        ThreadPoolService.getInstance();
-//        threadpool.execute(run);
         run = new SnakeRun();
-        thread = new Thread(run);
-        thread.start();
+        fresh = new Refresh();
+        // 启动移动线程
+        ThreadPoolService.getInstance().execute(run);
+        // 启动刷新线程
+        ThreadPoolService.getInstance().execute(fresh);
         
         produceFood();
         
@@ -165,11 +170,15 @@ public class SnakeClient extends Frame{
         g.drawImage(backScreen, 0, 0, null);
         // 还原虚拟屏画笔的初始颜色
         gOfBackScreen.setColor(c);
-        
-        snakeMove();
-        collisionDetection();
     }
     
+    /**
+    * @Title: snakeMove
+    * @Description: 通过删除蛇尾，添加蛇头的方式实现贪吃蛇的移动
+    * @param     参数 
+    * @return void    返回类型
+    * @throws
+     */
     public void snakeMove() {
         boolean eat = false;
         
@@ -197,16 +206,23 @@ public class SnakeClient extends Frame{
         eat = eatFood();
         
         snake.add(new Food(x, y, this));
+        // 当贪吃蛇吃到食物后，移动时不删除蛇尾
         if (eat != true) {
             snake.remove(0);
         }
     }
     
+    /**
+    * @Title: produceFood
+    * @Description: 随机在屏幕上生成一个食物
+    * @param     参数 
+    * @return void    返回类型
+    * @throws
+     */
     public void produceFood() {
+        Long timeStart = System.currentTimeMillis();
         boolean produce = false;
-        // 随机在屏幕上生成一个食物
         while (produce == false) {
-System.out.println("produce");
             int xFood = -1;
             int yFood = -1;
             int x = -1;
@@ -243,6 +259,8 @@ System.out.println("produce");
                 }
             }
         }
+        Long timeEnd = System.currentTimeMillis();
+        System.out.println("produce:" + (timeEnd - timeStart) + "ms");
     }
     
     public void collisionDetection() {
@@ -256,29 +274,77 @@ System.out.println("STOP");
             }
         }
         
-        // 蛇头与边框碰撞检测 8, SCORE_AREA, GAME_WIDTH - 16, GAME_HEIGHT - SCORE_AREA - 8
+        // 蛇头与边框碰撞检测
         Food food = snake.get(0);
-        if (food.x <= 7 || food.x >= (GAME_WIDTH - 8) || food.y <= SCORE_AREA - 1 || food.y >= (GAME_HEIGHT - 8)) {
-            // 停止画面刷新线程
-            run.stopRun();
+        if (run != null) {
+            if (food.x <= 7 || food.x >= (GAME_WIDTH - 8) || food.y <= SCORE_AREA - 1 || food.y >= (GAME_HEIGHT - 8)) {
+                // 停止画面刷新线程
+                run.stopRun();
 System.out.println("STOP");           
+            }
         }
     }
     
+    /**
+    * @Title: eatFood
+    * @Description: 判断移动的过程中是否触碰到了食物
+    * @param @return    参数 
+    * @return boolean    返回类型
+    * @throws
+     */
     public boolean eatFood() {
         boolean eat = false;
         // 蛇头与食物碰撞
         if (foodForEat != null && snake.get(0).getRectangle().intersects(foodForEat.getRectangle())) {
                 eat = true;
                 // 随机在屏幕上生成一个食物
-                foodForEat = null;
                 produceFood();
         }
         
         return eat;
     }
     
+    /**
+     * @ProjectName:  [GluttonousSnake] 
+     * @Package:      [.SnakeClient.java]  
+     * @ClassName:    [SnakeRun]   
+     * @Description:  [实现贪吃蛇客户端画面的repaint线程]   
+     * @Author:       [Guiyajun]   
+     * @CreateDate:   [2019年11月7日 下午4:34:50]   
+     * @UpdateUser:   [Guiyajun]   
+     * @UpdateDate:   [2019年11月7日 下午4:34:50]   
+     * @UpdateRemark: [说明本次修改内容]  
+     * @Version:      [v1.0]
+     */
     private class SnakeRun implements Runnable {
+        boolean runStat = true;
+        @Override
+        public void run() {
+            while(runStat) {
+                snakeMove();
+                collisionDetection();
+                try {
+                    // 每刷新一次等待的时间间隔，ms是单位
+                    Thread.sleep(150);   
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        
+        /**
+        * @Title: stopRun
+        * @Description: 当贪吃蛇撞墙或者撞到自己，可以调用该方法停止刷新
+        * @param     参数 
+        * @return void    返回类型
+        * @throws
+         */
+        public void stopRun() {
+            runStat = false;
+        }
+    }
+    
+    private class Refresh implements Runnable {
         boolean runStat = true;
         @Override
         public void run() {
@@ -286,14 +352,21 @@ System.out.println("STOP");
                 // 调用重画方法，重画方法会先调用update方法，再调用paint方法
                 repaint();      
                 try {
-                    // 每刷新一次等待30ms
-                    Thread.sleep(140);   
+                    // 每刷新一次等待的时间间隔，ms是单位
+                    Thread.sleep(50);   
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
         }
         
+        /**
+        * @Title: stopRun
+        * @Description: 当贪吃蛇撞墙或者撞到自己，可以调用该方法停止刷新
+        * @param     参数 
+        * @return void    返回类型
+        * @throws
+         */
         public void stopRun() {
             runStat = false;
         }
