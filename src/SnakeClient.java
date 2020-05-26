@@ -41,6 +41,8 @@ public class SnakeClient extends Frame{
     Image backScreen = null;
     /** 记分区的高度，宽度与游戏客户端宽度一致，这里不做申明 */ 
     public static final int SCORE_AREA = 60;
+    /** 其他边框的宽度 **/
+    public static final int BORDER_WIDTH = 16;
     /** 初始化贪吃蛇移动的方向 */
     Direction dir = Direction.LEFT;
     /**
@@ -48,9 +50,9 @@ public class SnakeClient extends Frame{
      */
     private static final long serialVersionUID = 1L;
     /** 游戏客户端的宽度 */
-    private static final int GAME_WIDTH = 400;
+    private static final int GAME_WIDTH = 400 + BORDER_WIDTH * 2;
     /** 游戏客户端的高度 */
-    private static final int GAME_HEIGHT = 460;
+    private static final int GAME_HEIGHT = 400 + SCORE_AREA + BORDER_WIDTH;
     /** 贪吃蛇身上的蛇肉集合 */
     List<Food> snake = new ArrayList<>();
     /** 屏幕上的食物，可以吃的  */
@@ -65,6 +67,8 @@ public class SnakeClient extends Frame{
     SnakeRun run = null;
     /** 画面自动刷新线程的实例 */
     Refresh fresh = null;
+    /** 记录蛇头 **/
+    Food snakeHead = null;
     
     public static void main(String[] args) {
         SnakeClient snakeClient = new SnakeClient();
@@ -81,6 +85,8 @@ public class SnakeClient extends Frame{
         for (int i=0; i<snakeStartLenth; i++) {
             snake.add(new Food(x + Food.WIDTH * (3 - i), y, this));
         }
+        
+        snakeHead = snake.get(3);
         
         run = new SnakeRun();
         fresh = new Refresh();
@@ -150,16 +156,12 @@ public class SnakeClient extends Frame{
         Graphics gOfBackScreen = backScreen.getGraphics();
         // 获取画笔的初始颜色
         Color c = gOfBackScreen.getColor();
-        // 设置画笔的颜色为粉色
-        gOfBackScreen.setColor(Color.PINK);
-        // 画出记分区
-        gOfBackScreen.fillRect(0, 0, GAME_WIDTH, SCORE_AREA);
         // 设置画笔的颜色为橘色
         gOfBackScreen.setColor(Color.PINK);
         // 画出游戏区
-        gOfBackScreen.fillRect(0, SCORE_AREA, GAME_WIDTH, GAME_HEIGHT - SCORE_AREA);
+        gOfBackScreen.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
         gOfBackScreen.setColor(Color.LIGHT_GRAY);
-        gOfBackScreen.fillRect(8, SCORE_AREA + 8, GAME_WIDTH - 16, GAME_HEIGHT - SCORE_AREA - 16);
+        gOfBackScreen.fillRect(BORDER_WIDTH, SCORE_AREA, 400, 400);
         // 设置画笔的颜色为黑色
         gOfBackScreen.setColor(Color.BLACK);
         // 记分区画出snake长度
@@ -204,8 +206,9 @@ public class SnakeClient extends Frame{
         }
         
         eat = eatFood();
-        
-        snake.add(new Food(x, y, this));
+        snakeHead = new Food(x, y, this);
+        collisionDetection();
+        snake.add(snakeHead);
         // 当贪吃蛇吃到食物后，移动时不删除蛇尾
         if (eat != true) {
             snake.remove(0);
@@ -229,18 +232,18 @@ public class SnakeClient extends Frame{
             int y = -1;
             while (xFood == -1 || yFood == -1) {
                 if (xFood == -1) {
-                    x = xRandom.nextInt(GAME_WIDTH - 16) + 8;
+                    x = xRandom.nextInt(GAME_WIDTH - BORDER_WIDTH) + BORDER_WIDTH;
                 }
                 
                 if (yFood == -1) {
-                    y = yRandom.nextInt(GAME_HEIGHT - 68 - 8) + 68;
+                    y = yRandom.nextInt(GAME_HEIGHT - BORDER_WIDTH) + SCORE_AREA;
                 }
                 
-                if (xFood == -1 && ((x - 8) % 8) == 0) {
+                if (xFood == -1 && ((x - BORDER_WIDTH) % 8) == 0) {
                     xFood = x;
                 }
                 
-                if (yFood == -1 && ((y - 68) % 8) == 0) {
+                if (yFood == -1 && ((y - SCORE_AREA) % 8) == 0) {
                     yFood = y;
                 }
             }
@@ -265,22 +268,23 @@ public class SnakeClient extends Frame{
     
     public void collisionDetection() {
         // 蛇头与蛇身碰撞检测
-        for (int i=1; i<snake.size(); i++) {
+        for (int i=0; i<snake.size() - 1; i++) {
             Food foodOnSnake = snake.get(i);
-            if (foodOnSnake.getRectangle().intersects(snake.get(0).getRectangle())) {
+            if (foodOnSnake.equals(snakeHead) != true && foodOnSnake.getRectangle()
+                    .intersects(snakeHead.getRectangle())) {
                 // 停止画面刷新线程
                 run.stopRun();
-System.out.println("STOP");
+System.out.println("Stop");
             }
         }
         
         // 蛇头与边框碰撞检测
-        Food food = snake.get(0);
         if (run != null) {
-            if (food.x <= 7 || food.x >= (GAME_WIDTH - 8) || food.y <= SCORE_AREA - 1 || food.y >= (GAME_HEIGHT - 8)) {
+            if (snakeHead.x < BORDER_WIDTH || snakeHead.x > (GAME_WIDTH - BORDER_WIDTH) || snakeHead.y < SCORE_AREA
+                    || snakeHead.y > (GAME_HEIGHT - BORDER_WIDTH)) {
                 // 停止画面刷新线程
                 run.stopRun();
-System.out.println("STOP");           
+System.out.println("Stop");           
             }
         }
     }
@@ -295,7 +299,7 @@ System.out.println("STOP");
     public boolean eatFood() {
         boolean eat = false;
         // 蛇头与食物碰撞
-        if (foodForEat != null && snake.get(0).getRectangle().intersects(foodForEat.getRectangle())) {
+        if (foodForEat != null && snakeHead.getRectangle().intersects(foodForEat.getRectangle())) {
                 eat = true;
                 // 随机在屏幕上生成一个食物
                 produceFood();
@@ -322,7 +326,6 @@ System.out.println("STOP");
         public void run() {
             while(runStat) {
                 snakeMove();
-                collisionDetection();
                 try {
                     // 每刷新一次等待的时间间隔，ms是单位
                     Thread.sleep(150);   
