@@ -69,6 +69,10 @@ public class SnakeClient extends Frame{
     Refresh fresh = null;
     /** 记录蛇头 **/
     Food snakeHead = null;
+    /** 贪吃蛇移动一步休息的时间，单位ms **/
+    private static int snakeSpeed = 150;
+    /** 记录上一次的按键 **/
+    private static int keyCodeOld;
     
     public static void main(String[] args) {
         SnakeClient snakeClient = new SnakeClient();
@@ -108,11 +112,22 @@ public class SnakeClient extends Frame{
         });
         
         addKeyListener(new KeyAdapter() {
+            
+            @Override
+            public void keyReleased(KeyEvent e) {
+                snakeSpeed = 150;
+            }
 
             @Override
             public void keyPressed(KeyEvent e) {
                 int keyCode = e.getKeyCode();
-                switch (keyCode) {
+                
+                if (keyCodeOld == keyCode) {
+                    snakeSpeed = 50;
+                } else {
+                    keyCodeOld = keyCode;
+                    
+                    switch (keyCode) {
                     case KeyEvent.VK_UP:
                         dir = Direction.UP;
                         break;
@@ -127,9 +142,11 @@ public class SnakeClient extends Frame{
                         break;
                     default:
                         break;
+                    }
                 }
             }
         });
+        
     }
     
     @Override
@@ -328,7 +345,7 @@ public class SnakeClient extends Frame{
                 snakeMove();
                 try {
                     // 每刷新一次等待的时间间隔，ms是单位
-                    Thread.sleep(150);   
+                    Thread.sleep(snakeSpeed);   
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
