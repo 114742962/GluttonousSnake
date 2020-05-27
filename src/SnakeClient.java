@@ -207,11 +207,15 @@ public class SnakeClient extends Frame{
         
         eat = eatFood();
         snakeHead = new Food(x, y, this);
-        collisionDetection();
-        snake.add(snakeHead);
-        // 当贪吃蛇吃到食物后，移动时不删除蛇尾
-        if (eat != true) {
-            snake.remove(0);
+        if (collisionDetection() != true) {
+            snake.add(snakeHead);
+            // 当贪吃蛇吃到食物后，移动时不删除蛇尾
+            if (eat != true) {
+                snake.remove(0);
+            }
+        } else {
+            run.stopRun();
+            fresh.stopRun();
         }
     }
     
@@ -223,7 +227,6 @@ public class SnakeClient extends Frame{
     * @throws
      */
     public void produceFood() {
-        Long timeStart = System.currentTimeMillis();
         boolean produce = false;
         while (produce == false) {
             int xFood = -1;
@@ -232,11 +235,11 @@ public class SnakeClient extends Frame{
             int y = -1;
             while (xFood == -1 || yFood == -1) {
                 if (xFood == -1) {
-                    x = xRandom.nextInt(GAME_WIDTH - BORDER_WIDTH) + BORDER_WIDTH;
+                    x = xRandom.nextInt(GAME_WIDTH - BORDER_WIDTH * 2) + BORDER_WIDTH;
                 }
                 
                 if (yFood == -1) {
-                    y = yRandom.nextInt(GAME_HEIGHT - BORDER_WIDTH) + SCORE_AREA;
+                    y = yRandom.nextInt(GAME_HEIGHT - SCORE_AREA - BORDER_WIDTH) + SCORE_AREA;
                 }
                 
                 if (xFood == -1 && ((x - BORDER_WIDTH) % 8) == 0) {
@@ -262,31 +265,28 @@ public class SnakeClient extends Frame{
                 }
             }
         }
-        Long timeEnd = System.currentTimeMillis();
-        System.out.println("produce:" + (timeEnd - timeStart) + "ms");
     }
     
-    public void collisionDetection() {
+    public boolean collisionDetection() {
+        boolean isCollision = false;
+        
         // 蛇头与蛇身碰撞检测
         for (int i=0; i<snake.size() - 1; i++) {
             Food foodOnSnake = snake.get(i);
             if (foodOnSnake.equals(snakeHead) != true && foodOnSnake.getRectangle()
                     .intersects(snakeHead.getRectangle())) {
-                // 停止画面刷新线程
-                run.stopRun();
-System.out.println("Stop");
+                isCollision = true;
             }
         }
         
         // 蛇头与边框碰撞检测
         if (run != null) {
-            if (snakeHead.x < BORDER_WIDTH || snakeHead.x > (GAME_WIDTH - BORDER_WIDTH) || snakeHead.y < SCORE_AREA
-                    || snakeHead.y > (GAME_HEIGHT - BORDER_WIDTH)) {
-                // 停止画面刷新线程
-                run.stopRun();
-System.out.println("Stop");           
+            if (snakeHead.x < BORDER_WIDTH || snakeHead.x > (GAME_WIDTH - BORDER_WIDTH - Food.WIDTH) 
+                    || snakeHead.y < SCORE_AREA || snakeHead.y > (GAME_HEIGHT - BORDER_WIDTH - Food.HEIGHT)) {
+                isCollision = true;
             }
         }
+        return isCollision;
     }
     
     /**
